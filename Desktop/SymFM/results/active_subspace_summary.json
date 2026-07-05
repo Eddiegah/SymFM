@@ -1,0 +1,34 @@
+{
+  "N4": {
+    "N": 4,
+    "d": 2,
+    "compression": 2.0,
+    "exp_var_train": 0.0,
+    "exp_var_val": 0.0,
+    "final_loss": 270.99139404296875
+  },
+  "N10": {
+    "N": 10,
+    "d": 5,
+    "compression": 2.0,
+    "exp_var_train": 0.0,
+    "exp_var_val": 0.0,
+    "final_loss": 329.9234924316406
+  },
+  "N20": {
+    "N": 20,
+    "d": 10,
+    "compression": 2.0,
+    "exp_var_train": 0.0,
+    "exp_var_val": 0.0,
+    "final_loss": 333.8414001464844
+  },
+  "N40": {
+    "N": 40,
+    "d": 13,
+    "compression": 3.076923076923077,
+    "exp_var_train": 0.0,
+    "exp_var_val": 0.0,
+    "final_loss": 285.4288330078125
+  }
+}

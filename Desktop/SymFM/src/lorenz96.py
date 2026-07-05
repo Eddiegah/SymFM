@@ -257,7 +257,7 @@ if __name__ == "__main__":
     print("SymFM Phase 1: Lorenz-96 Data Generation")
     print("=" * 60)
 
-    for N in [4, 10]:
+    for N in [4, 10, 20, 40]:
         data = generate_lorenz96_data(
             N=N,
             F=8.0,
@@ -278,4 +278,6 @@ if __name__ == "__main__":
     print("Files saved in the data/ folder:")
     print("  data/lorenz96_N4.npz")
     print("  data/lorenz96_N10.npz")
+    print("  data/lorenz96_N20.npz")
+    print("  data/lorenz96_N40.npz")
     print("=" * 60)

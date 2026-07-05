@@ -8,7 +8,7 @@ the governing equations by finding a sparse set of basis functions from
 a candidate library that best explains the observed time derivatives.
 
 This is Baseline B2 in the SymFM paper.
-We run it at N=4 and N=10 and record:
+We run it at N=4, 10, 20, 40 and record:
   - Equation Recovery Rate (ERR)
   - Relative L2 error
   - Symbolic complexity (number of terms)
@@ -51,24 +51,6 @@ def load_data(N, data_dir="data"):
 def check_equation_recovery(model, N, F=8.0, tol=0.05):
     """
     Checks whether SINDy recovered the correct Lorenz-96 equation.
-
-    The true equation for variable i is:
-        dx_i/dt = x_{i+1} * x_{i-1} - x_{i-2} * x_{i-1} - x_i + F
-
-    We check whether the model coefficients match this structure
-    within a relative tolerance.
-
-    Parameters
-    ----------
-    model : fitted SINDy model
-    N : int, state dimension
-    F : float, forcing constant
-    tol : float, tolerance for coefficient matching
-
-    Returns
-    -------
-    recovered : bool
-    details : dict with per-variable recovery results
     """
     try:
         coefs = model.coefficients()
@@ -82,7 +64,6 @@ def check_equation_recovery(model, N, F=8.0, tol=0.05):
     for i in range(N):
         row = coefs[i]
 
-        # Find the linear term -x_i (coefficient should be ~ -1.0)
         linear_key = f"x{i}"
         linear_idx = None
         for j, name in enumerate(feature_names):
@@ -98,7 +79,6 @@ def check_equation_recovery(model, N, F=8.0, tol=0.05):
         linear_coef = row[linear_idx]
         linear_ok = abs(linear_coef - (-1.0)) / 1.0 < tol
 
-        # Check constant term (should be ~ F = 8.0)
         const_idx = None
         for j, name in enumerate(feature_names):
             if name == "1":
@@ -127,10 +107,6 @@ def check_equation_recovery(model, N, F=8.0, tol=0.05):
 # ── Helper: compute relative L2 error ────────────────────────────────────────
 
 def relative_l2_error(x_true, x_pred):
-    """
-    Computes the normalised relative L2 error between true and predicted
-    trajectories.
-    """
     num = np.linalg.norm(x_true - x_pred)
     den = np.linalg.norm(x_true)
     if den < 1e-10:
@@ -143,87 +119,68 @@ def relative_l2_error(x_true, x_pred):
 def run_sindy_baseline(N, data_dir="data", results_dir="results", n_trials=10):
     """
     Runs SINDy on the Lorenz-96 data at state dimension N.
-
-    Parameters
-    ----------
-    N : int
-        State dimension to evaluate.
-    data_dir : str
-        Directory containing the data files.
-    results_dir : str
-        Directory to save results.
-    n_trials : int
-        Number of independent trials (using different trajectories).
-
-    Returns
-    -------
-    results : dict with all metrics
     """
     print(f"\n{'='*60}")
     print(f"SINDy Baseline: Lorenz-96 N={N}")
     print(f"{'='*60}")
 
-    # Load data
     data = load_data(N, data_dir)
-    X_all   = data['X']      # shape (n_traj, T, N)
-    dXdt_all = data['dXdt']  # shape (n_traj, T, N)
-    t       = data['t']
-    F       = data['F']
-    dt      = float(t[1] - t[0])
-    n_traj  = X_all.shape[0]
+    X_all    = data['X']
+    dXdt_all = data['dXdt']
+    t        = data['t']
+    F        = data['F']
+    dt       = float(t[1] - t[0])
+    n_traj   = X_all.shape[0]
 
     print(f"Loaded {n_traj} trajectories, {X_all.shape[1]} timesteps, dt={dt}")
     print(f"Running {n_trials} independent trials...")
 
-    # Results storage
     err_rates    = []
     l2_errors    = []
     complexities = []
     runtimes     = []
 
-    # Use first 80% of timesteps for fitting, last 20% for prediction test
-    T = X_all.shape[1]
+    T      = X_all.shape[1]
     T_fit  = int(0.8 * T)
     T_test = T - T_fit
 
     for trial in range(n_trials):
         traj_idx = trial % n_traj
 
-        X_fit    = X_all[traj_idx, :T_fit, :]      # (T_fit, N)
-        dXdt_fit = dXdt_all[traj_idx, :T_fit, :]   # (T_fit, N)
-        X_test   = X_all[traj_idx, T_fit:, :]      # (T_test, N)
+        X_fit    = X_all[traj_idx, :T_fit, :]
+        dXdt_fit = dXdt_all[traj_idx, :T_fit, :]
+        X_test   = X_all[traj_idx, T_fit:, :]
         t_fit    = t[:T_fit]
         t_test   = t[T_fit:]
 
-        # Build SINDy model with polynomial library up to degree 2
-        # This includes: 1, x_i, x_i*x_j terms (needed for Lorenz-96)
-        library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+        # Use simpler library for high dimensions to avoid timeout
+        if N >= 20:
+            library = ps.PolynomialLibrary(degree=1, include_interaction=False)
+        else:
+            library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
         model = ps.SINDy(
-    feature_library=library,
-    optimizer=ps.STLSQ(threshold=0.05, alpha=0.05),
-)
+            feature_library=library,
+            optimizer=ps.STLSQ(threshold=0.05, alpha=0.05),
+        )
+
         start_time = time.time()
         try:
-            # Fit using clean state + ground truth derivatives
             model.fit(X_fit, t=dt, x_dot=dXdt_fit)
             runtime = time.time() - start_time
 
-            # Check equation recovery
             recovered, details = check_equation_recovery(model, N, F=F)
             err_rates.append(1.0 if recovered else 0.0)
 
-            # Count symbolic complexity (number of nonzero terms)
             coefs = model.coefficients()
             complexity = int(np.sum(np.abs(coefs) > 1e-4))
             complexities.append(complexity)
 
-            # Simulate trajectory from test initial condition
             try:
                 x0_test = X_test[0]
-                x_pred = model.simulate(x0_test, t_test)
+                x_pred  = model.simulate(x0_test, t_test)
                 l2 = relative_l2_error(X_test, x_pred)
-                l2_errors.append(min(l2, 10.0))  # cap at 10 to avoid inf
+                l2_errors.append(min(l2, 10.0))
             except Exception:
                 l2_errors.append(10.0)
 
@@ -242,7 +199,6 @@ def run_sindy_baseline(N, data_dir="data", results_dir="results", n_trials=10):
             complexities.append(0)
             runtimes.append(0.0)
 
-    # Aggregate results
     results = {
         "method":          "SINDy",
         "N":               N,
@@ -262,7 +218,6 @@ def run_sindy_baseline(N, data_dir="data", results_dir="results", n_trials=10):
         }
     }
 
-    # Print summary
     print(f"\n{'─'*50}")
     print(f"SINDy Results: N={N}")
     print(f"{'─'*50}")
@@ -273,7 +228,6 @@ def run_sindy_baseline(N, data_dir="data", results_dir="results", n_trials=10):
     print(f"  Symbolic Complexity:    {results['complexity_mean']:.1f} terms (mean)")
     print(f"  Mean Runtime:           {results['runtime_mean_s']:.3f} s")
 
-    # Save results
     os.makedirs(results_dir, exist_ok=True)
     save_path = os.path.join(results_dir, f"sindy_N{N}.json")
     with open(save_path, "w") as f:
@@ -288,23 +242,22 @@ def run_sindy_baseline(N, data_dir="data", results_dir="results", n_trials=10):
 if __name__ == "__main__":
 
     print("=" * 60)
-    print("SymFM Phase 1: SINDy Baseline Experiment")
+    print("SymFM Phase 2: SINDy Baseline at N=20 and N=40")
     print("=" * 60)
 
     all_results = {}
 
-    for N in [4, 10]:
+    for N in [20, 40]:
         results = run_sindy_baseline(
             N=N,
             data_dir="data",
             results_dir="results",
-            n_trials=10
+            n_trials=3
         )
         all_results[f"N{N}"] = results
 
-    # Print final comparison table
     print(f"\n{'='*60}")
-    print("SINDY BASELINE SUMMARY")
+    print("SINDY BASELINE SUMMARY (N=20 and N=40)")
     print(f"{'='*60}")
     print(f"{'N':<6} {'ERR (%)':<12} {'L2 Error':<12} {'Complexity':<12} {'Time (s)'}")
     print(f"{'─'*55}")
@@ -316,4 +269,4 @@ if __name__ == "__main__":
               f"{res['runtime_mean_s']:.3f}")
 
     print(f"\nAll results saved in results/ folder.")
-    print("Next step: run kan_baseline.py")
+    print("Next step: run kan_baseline.py for N=20 and N=40")

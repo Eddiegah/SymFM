@@ -363,13 +363,13 @@ if __name__ == "__main__":
 
     all_results = {}
 
-    for N in [4, 10]:
+    for N in [20, 40]:
         results = run_kan_baseline(
             N=N,
             data_dir="data",
             results_dir="results",
-            n_trials=5,
-            n_epochs=300
+            n_trials=3,
+            n_epochs=100
         )
         all_results[f"N{N}"] = results
 

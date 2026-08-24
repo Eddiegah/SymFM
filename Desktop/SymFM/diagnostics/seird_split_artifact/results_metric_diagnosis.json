@@ -1,0 +1,13 @@
+{
+  "test_relative_l2": 86.1096844427988,
+  "test_mae": 0.001850092056005217,
+  "test_rmse": 0.003048075003344848,
+  "test_target_norm": 0.0016790548550784854,
+  "train_relative_l2": 0.8386294871198482,
+  "train_mae": 0.0026607154541283783,
+  "train_rmse": 0.004709432876820435,
+  "train_target_norm": 0.5754308375408668,
+  "mid_relative_l2": 0.8321115449871085,
+  "mid_recovered": false,
+  "mid_target_norm": 0.26128297057226857
+}

@@ -1,0 +1,20 @@
+{
+  "P": 100,
+  "N": 500,
+  "d": 16,
+  "chronological": {
+    "relative_l2": 281.374089100381,
+    "clipped_l2": 10.0,
+    "recovered": false,
+    "elapsed_s": 72.14932489395142,
+    "y_train_norm": 1.9346602862897428,
+    "y_test_norm": 0.0017435752651659418
+  },
+  "random_split": {
+    "relative_l2": 0.9148469504666275,
+    "recovered": false,
+    "elapsed_s": 78.19153308868408,
+    "y_train_norm": 1.6005980121243673,
+    "y_test_norm": 0.6589350394254561
+  }
+}

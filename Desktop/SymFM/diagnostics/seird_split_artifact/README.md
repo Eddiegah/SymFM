@@ -12,18 +12,24 @@ rather than taking an architectural explanation on faith.
 `seird_common.py` is the model, training loop, and SEIRD data generator,
 extracted structure-for-structure from `notebooks/SymFM_NS_SEIRD_Colab.ipynb`
 (cells 4, 10, 12, 14) -- same `SymFM` class, same `train_model`/`eval_model`,
-same `simulate_seird`. Re-run at `P=10` (`N=50`) only, on CPU (no GPU was
-available for this check), as a diagnostic rather than a full reproduction
-of the paper's 3-trial protocol.
+same `simulate_seird`. Re-run on CPU (no GPU was available for this
+check), as a diagnostic rather than a full reproduction of the paper's
+3-trial protocol.
 
 - `run_diagnostic.py` -- reproduces the original chronological-split
-  result and prints per-compartment target scale.
+  result at P=10 and prints per-compartment target scale.
 - `diagnose_metric.py` -- breaks the relative-ℓ2 metric down by
   train/val/test window and by absolute error (MAE/RMSE) to isolate the
-  cause of the blow-up.
-- `test_random_split.py` -- re-trains and re-evaluates using a random
-  (representative) 70/15/15 split instead of the original chronological
-  one, as the direct test of the split-artifact hypothesis.
+  cause of the blow-up, at P=10.
+- `test_random_split.py` -- re-trains and re-evaluates P=10 using a
+  random (representative) 70/15/15 split instead of the original
+  chronological one, as the direct test of the split-artifact hypothesis.
+- `run_full.py` -- extends the chronological-vs-representative-split
+  comparison to P=50 (N=250) and P=100 (N=500), matching the paper's
+  `seird_d_map = {10: 4, 50: 10, 100: 16}`. Only generates 1 trajectory
+  per P (not the original 15), since the diagnostic only ever uses
+  `traj_idx=0` -- saves `solve_ivp` cost without changing the dynamics
+  being tested.
 
 ## Finding
 
@@ -31,37 +37,43 @@ The SEIRD trajectories are single-wave epidemics that peak around
 `t≈90` and decay to a near-quiescent post-epidemic state by `t≈250-300`
 (300 timesteps total). The benchmark's **chronological** 70/15/15
 train/val/test split puts the test window entirely in that quiescent
-tail, where `‖dXdt‖` is ~340× smaller than in the training window
-(`‖y_test‖=1.7e-3` vs. `‖y_train‖=0.575`). Relative ℓ2 error divides
-prediction error by `‖y_test‖`, so it is numerically unstable exactly
-when the target norm is tiny.
+tail, where `‖dXdt‖` is orders of magnitude smaller than in the training
+window. Relative ℓ2 error divides prediction error by `‖y_test‖`, so it
+is numerically unstable exactly when the target norm is tiny.
 
-Confirmed directly:
+Checked at all three tested dimensions:
 
-| Evaluation | relative ℓ2 | absolute MAE |
+| N | Chronological-split relative ℓ2 | Representative-split relative ℓ2 |
 |---|---|---|
-| Original chronological-split test window | **86.1** (clipped to 10.0 in the paper's sentinel) | 1.85e-3 |
-| Same model, train window | 0.84 | 2.66e-3 |
-| Same model, middle window (t=100-200, near epidemic peak) | 0.83 | -- |
-| **Retrained on a random 70/15/15 split** | **0.91** | -- |
+| 50  | 86.1 (clipped to the paper's 10.0 sentinel) | 0.910 |
+| 250 | 240.4 | 0.913 |
+| 500 | 281.4 | 0.915 |
 
-The absolute error is comparable across all four rows -- the model isn't
-dramatically better or worse at any of them. The relative-ℓ2 metric is
-what swings from 86.1 to 0.91 depending purely on which timesteps land
-in the denominator.
+Two things stand out:
 
-**This does not overturn the paper's headline result**: 0.91 is still
-above the `tol=0.25` recovery threshold used to compute ERR, so exact
-symbolic recovery genuinely was not achieved. But it reframes *why*:
-not an order-of-magnitude architectural failure, but a result in the
-same difficulty range as Lorenz-96's hardest configurations (ℓ2=0.97-0.98
-at N=20,40), previously obscured by an evaluation-protocol artifact.
+1. **The chronological-split failure gets worse with N** (86 → 240 →
+   281), consistent with the artifact's cause -- as P grows, the summed
+   coupling structure leaves the post-epidemic tail increasingly
+   quiescent relative to the training window.
+2. **The representative-split result is essentially flat** (~0.91-0.92)
+   across a 10× increase in state dimension. Absolute error is
+   comparable across all rows -- the model isn't dramatically better or
+   worse at any of them. The relative-ℓ2 metric is what swings wildly
+   depending purely on which timesteps land in the denominator.
+
+**This does not overturn the paper's headline result**: 0.91-0.92 is
+still above the `tol=0.25` recovery threshold used to compute ERR, so
+exact symbolic recovery genuinely was not achieved at any tested N. But
+it reframes *why*, and reveals something positive: not an
+order-of-magnitude architectural failure that gets worse with scale, but
+a result in the same difficulty range as Lorenz-96's hardest
+configurations (ℓ2=0.97-0.98 at N=20,40) at every tested SEIRD
+dimension, previously obscured by an evaluation-protocol artifact.
 
 ## What this does not establish
 
-- Only checked at `P=10` (`N=50`); `P=50,100` (`N=250,500`) were not
-  re-run.
-- Only one random-split seed; the paper's other benchmarks use 3 trials.
+- Each N was checked with a single trajectory and a single random-split
+  seed, not the paper's 3-trial protocol with reported mean/std.
 - Whether Lorenz-96/NS-32 have an analogous issue was not checked here
   (their dynamics are sustained/chaotic rather than a single decaying
   transient, so this specific failure mode is unlikely to apply, but
@@ -69,6 +81,7 @@ at N=20,40), previously obscured by an evaluation-protocol artifact.
 
 See `main.tex`'s Discussion section (and the `TODO(author)` comment
 right after this paragraph) in the paper repo for how this is written up,
-and what's still needed before treating it as final: re-running at
-N=250/500 with the full 3-trial protocol and a representative split as
-the actual benchmark methodology, not just this diagnostic.
+and what's still needed before treating it as final benchmark
+methodology rather than a diagnostic: re-running with the full 3-trial
+protocol and deciding whether to promote these representative-split
+numbers into Table 3's SEIRD column itself.

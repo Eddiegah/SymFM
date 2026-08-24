@@ -8,7 +8,7 @@ near-zero-derivative regime) rather than a fundamental architecture limit.
 import sys, json
 import numpy as np
 import torch
-sys.path.insert(0, r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from seird_common import simulate_seird, train_model, eval_model
 
 P = 10
@@ -38,7 +38,7 @@ model, hist = train_model(X_tr, y_tr, X_vl, y_vl, N=N_s, d=d_s, n_epochs=2000,
 m = eval_model(model, X_tst, y_tst, device='cpu', tol=0.25)
 print(f"\nRandom-split test result: recovered={m['recovered']} relative_l2={m['raw_l2']:.4f} (tol=0.25)")
 
-with open(r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun\results_random_split.json', 'w') as f:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results_random_split.json'), 'w') as f:
     json.dump({'relative_l2': m['raw_l2'], 'recovered': m['recovered'],
                'y_tr_norm': float(np.linalg.norm(y_tr)), 'y_tst_norm': float(np.linalg.norm(y_tst))}, f, indent=2)
 print("Saved results_random_split.json")

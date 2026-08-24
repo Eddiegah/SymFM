@@ -11,13 +11,13 @@ run_full.py: same architecture, same hyperparameters, same d per N
 using a random split instead of a chronological one, per the finding in
 results_full_N*.json / diagnose_metric.py.
 """
-import sys, time, json
+import sys, os, time, json
 import numpy as np
 import torch
-sys.path.insert(0, r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from seird_common import simulate_seird, train_model, eval_model
 
-OUT = r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun'
+OUT = os.path.dirname(os.path.abspath(__file__))
 seird_d_map = {10: 4, 50: 10, 100: 16}
 N_TRIALS = 3
 

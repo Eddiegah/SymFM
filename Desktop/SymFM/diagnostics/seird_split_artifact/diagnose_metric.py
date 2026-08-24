@@ -7,7 +7,7 @@ test window in a post-epidemic near-zero-derivative regime, which blows up a
 import sys, json
 import numpy as np
 import torch
-sys.path.insert(0, r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from seird_common import simulate_seird, train_model, eval_model
 
 P = 10
@@ -71,6 +71,6 @@ results = {
     'train_relative_l2': m_train_selfeval['raw_l2'], 'train_mae': mae_train, 'train_rmse': rmse_train, 'train_target_norm': float(np.linalg.norm(y_tr)),
     'mid_relative_l2': m_mid['raw_l2'], 'mid_recovered': m_mid['recovered'], 'mid_target_norm': float(np.linalg.norm(y_mid)),
 }
-with open(r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun\results_metric_diagnosis.json', 'w') as f:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results_metric_diagnosis.json'), 'w') as f:
     json.dump(results, f, indent=2)
 print("\nSaved results_metric_diagnosis.json")

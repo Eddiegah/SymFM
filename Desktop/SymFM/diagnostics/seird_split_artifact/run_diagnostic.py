@@ -6,9 +6,9 @@ finding reproduces, and (b) diagnose WHY it fails so severely -- L2=10.0
 is the eval code's clip cap, meaning the true raw error is far above the
 tol=0.25 recovery threshold, not a near-miss.
 """
-import sys, time, json
+import sys, os, time, json
 import numpy as np
-sys.path.insert(0, r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from seird_common import simulate_seird, train_model, eval_model
 
 P = 10
@@ -52,6 +52,6 @@ print(f"  recovered={m['recovered']} l2(clipped)={m['l2']:.4f} raw_l2={m['raw_l2
 print(f"  pred_has_nan={m['pred_has_nan']} pred_scale={m['pred_scale']:.6g} target_scale={m['target_scale']:.6g}")
 results['original'] = {**m, 'elapsed_s': elapsed, 'history': hist}
 
-with open(r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun\results_original.json', 'w') as f:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results_original.json'), 'w') as f:
     json.dump(results, f, indent=2)
 print("\nSaved results_original.json")

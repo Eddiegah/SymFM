@@ -5,13 +5,13 @@ generates 1 trajectory per P (not the original 15) since the diagnostic
 only ever uses traj_idx=0 -- saves solve_ivp cost, doesn't change the
 per-trajectory dynamics being tested.
 """
-import sys, time, json
+import sys, os, time, json
 import numpy as np
 import torch
-sys.path.insert(0, r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from seird_common import simulate_seird, train_model, eval_model
 
-OUT = r'C:\Users\gahed\AppData\Local\Temp\claude\C--Projects-SignBridge\156f2dce-8240-4a38-b310-1446d952ba29\scratchpad\seird_rerun'
+OUT = os.path.dirname(os.path.abspath(__file__))
 seird_d_map = {10: 4, 50: 10, 100: 16}
 
 def run_for_P(P, n_epochs=2000):

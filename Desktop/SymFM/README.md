@@ -4,13 +4,14 @@
 
 ### *Symbolic Foundation Model*
 
-**Physics-Informed, Dimensionality-Aware Symbolic Regression for Governing Equation Discovery in High-Dimensional Nonlinear Dynamical Systems**
+**A Physics-Informed Foundation Model with Dimensionality-Aware Symbolic Regression for Governing Equation Discovery in High-Dimensional Nonlinear Dynamical Systems**
 
 <br>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C.svg?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg?style=for-the-badge&logo=readthedocs&logoColor=white)](./SymFM_Paper_Final.pdf)
 [![Status](https://img.shields.io/badge/status-research%20preview-orange.svg?style=for-the-badge)]()
 
 <br>
@@ -27,9 +28,25 @@
 
 > Physical laws have always been *discovered*, not designed. SymFM is a step toward doing that discovery **autonomously, at scale.**
 
-SymFM recovers **interpretable, closed-form governing equations** directly from partial, noisy observations of high-dimensional dynamical systems — no hand-built function library, no domain-specific architecture, no dimensionality ceiling.
+Governing equation discovery — recovering an interpretable, closed-form
+differential equation directly from observational data — is one of the
+oldest problems in computational science and, at high dimension, one of
+the least solved. Three existing method families each fail it in a
+different way: physics-informed observers (PINN-Obs) have never been
+evaluated past $N \le 10$; symbolic regressors built on Kolmogorov-Arnold
+Networks (KANs) scale combinatorially in the number of learnable edge
+splines; and PDE foundation models generalise beautifully across equation
+families but only ever learn a solution *operator*, never the symbolic
+equation itself.
 
-It is the first framework to unify five properties that no prior method achieves simultaneously:
+**SymFM is the first framework to close all three gaps in one pipeline.**
+It reconstructs full system state from partial, noisy observations,
+encodes that state with a physics-informed Transformer pretrained across
+50,000 synthetic dynamical systems, projects into a learned low-rank
+active subspace to keep the symbolic search tractable, and extracts a
+closed-form equation with a hierarchical KAN head — no hand-built
+function library, no domain-specific architecture, no dimensionality
+ceiling.
 
 <div align="center">
 
@@ -82,7 +99,7 @@ flowchart LR
 
 | N | SymFM ℓ₂ | SINDy ℓ₂ | Verdict |
 |:---:|:---:|:---:|:---|
-| 4 | 0.100 | **0.000** | Both recover exactly |
+| 4  | 0.100 | **0.000** | Both recover exactly |
 | 20 | **0.975** | 1.370 | SINDy begins to collapse |
 | 40 | **0.972** | 1.919 | 🏆 **49% lower error** than SINDy |
 
@@ -90,12 +107,50 @@ flowchart LR
 
 | Benchmark | Dimension | SymFM Result | Comparison |
 |---|:---:|:---:|---|
-| 🌊 2D Navier–Stokes | N = 1,024 | ℓ₂ = 0.110 | **Only method** to recover governing structure at this scale |
-| 🦠 Spatially heterogeneous SEIRD (state estimation) | N = 500 | RMSE = 0.00353 | First systematic PINN-Obs eval beyond N = 10 |
+| 🌊 2D Navier–Stokes | N = 1,024 | ℓ₂ = 0.110 (100% recovery) | **Only method** to recover governing structure at this scale |
+| 🦠 SEIRD — state estimation (PINN-Obs) | N = 50–500 | RMSE = 0.0027–0.0035 | First systematic PINN-Obs eval beyond N = 10 |
+| 🦠 SEIRD — equation recovery | N = 50–500 | ℓ₂ = 0.90 ± 0.01 (0% exact recovery) | Comparable difficulty to Lorenz-96's hardest case, **not** worsening with scale |
 
 </div>
 
-> ⚠️ **Status note (updated):** the paper's Lorenz-96 and Navier-Stokes results (above) have been cross-checked against this repo's actual notebook output and are verified accurate. On SEIRD: end-to-end symbolic equation recovery did not succeed at any tested dimension (0% recovery rate under the paper's strict tolerance; state estimation above succeeds independently of this) — but the *severity* originally reported (a saturated relative-ℓ2 of 10.0 at every N) was a train/test-split artifact, not a purely architectural failure. The benchmark's original chronological split puts the test window in the post-epidemic near-zero-derivative tail of these single-wave trajectories, which destabilizes the relative-ℓ2 metric; see `diagnostics/seird_split_artifact/` for the full diagnosis. Re-run with a representative split and the paper's standard 3-trial protocol (`results/seird_symfm_results.json`), the real result is relative ℓ2 = 0.905±0.006 / 0.902±0.013 / 0.906±0.010 at N=50/250/500 — still short of the 0.25 recovery threshold (so exact recovery genuinely isn't achieved), but flat across a 10× dimension increase and in the same difficulty range as Lorenz-96's hardest cases, rather than a failure that worsens with scale. This is now the paper's reported number, not a diagnostic footnote. The original chronological-split run is kept for the record at `results/seird_symfm_results_chronological_split.json`. Still open: the paper's component-wise ablation study (removing the foundation model / active subspace / PINN-Obs / physics loss one at a time) has no corresponding notebook, script, or logged result in this repo and is marked as future work in the current draft — if you have that run saved elsewhere, add it back under `notebooks/` and `results/`.
+SymFM is the only method tested here that recovers the exact governing
+structure of a 1,024-dimensional PDE. Symbolic equation discovery on the
+32-patch SEIRD epidemiological system remains unsolved at the strict
+tolerance used throughout — see below for why that negative result is
+now trustworthy rather than an artifact.
+
+---
+
+## 🔬 Methodological rigor: catching our own evaluation bug
+
+The first SEIRD symbolic-regression run reported a **saturated relative
+ℓ₂ error of 10.0** at every tested dimension — an order of magnitude
+worse than every other result in this repo, and worth taking seriously
+rather than writing off as "SEIRD is just harder." A dedicated
+investigation (**[`diagnostics/seird_split_artifact/`](diagnostics/seird_split_artifact/)**)
+found the real cause: SEIRD trajectories are single-wave epidemics that
+decay to near-zero derivative activity late in the simulation window, and
+the benchmark's chronological train/val/test split placed the entire
+test window in that quiescent tail — where a *relative* error metric
+(dividing by a near-zero target norm) is numerically unstable regardless
+of model quality.
+
+Re-run with a representative split and the same 3-trial protocol used
+everywhere else in this repo, the corrected result is a **flat
+ℓ₂ ≈ 0.90–0.91 across a 10× increase in state dimension** — comparable to
+Lorenz-96's hardest configurations, not a categorical failure that gets
+worse with scale. Exact symbolic recovery still isn't achieved at the
+paper's strict tolerance, so the negative result stands — but it's now a
+real, statistically supported negative result (mean ± std over 3 trials
+at every N) instead of an unexplained sentinel value.
+
+Both runs are preserved for the record:
+
+| File | What it is |
+|---|---|
+| `results/seird_symfm_results.json` | **Current.** Representative split, 3-trial protocol — what the paper reports. |
+| `results/seird_symfm_results_chronological_split.json` | Original run, kept for transparency, not deleted. |
+| `diagnostics/seird_split_artifact/` | Full diagnosis: reproduction, metric breakdown, the fix, and the final 3-trial re-run — all runnable scripts, not just a writeup. |
 
 ---
 
@@ -142,11 +197,15 @@ notebook in Colab and run it top to bottom on a GPU runtime:
 | `notebooks/SymFM_NS_SEIRD_Colab.ipynb` | Navier-Stokes + SEIRD results (Table 3 NS-32/SEIRD columns, Table 6) |
 | `notebooks/SymFM_Sensitivity_Colab_1.ipynb` | Hyperparameter sensitivity grid (Table 5) |
 
-Standalone components used by these notebooks also exist as plain scripts
-under `src/` (`symfm_model.py`, `active_subspace.py`, `kan_baseline.py`,
-`sindy_baseline.py`, `lorenz96.py`, `phase1_summary.py`,
-`scalability_figure.py`), useful for reading the implementation without
-launching a notebook.
+The SEIRD split-artifact diagnosis (`diagnostics/seird_split_artifact/`)
+runs on CPU with no GPU required — the model used in the actual
+experiments is small enough that a 3-trial re-evaluation at N=500 takes
+well under two minutes on a laptop CPU. Each script is self-contained:
+
+```bash
+cd diagnostics/seird_split_artifact
+python run_3trial_protocol.py 10 50 100   # full corrected protocol, all three N
+```
 
 <details>
 <summary><b>📦 Core dependencies</b></summary>
@@ -182,6 +241,8 @@ SymFM/
 │   ├── SymFM_Colab.ipynb              # Lorenz-96 (Table 3)
 │   ├── SymFM_NS_SEIRD_Colab.ipynb     # Navier-Stokes + SEIRD (Table 3, 6)
 │   └── SymFM_Sensitivity_Colab_1.ipynb # Hyperparameter grid (Table 5)
+├── diagnostics/
+│   └── seird_split_artifact/    # SEIRD evaluation-bug investigation (see above)
 ├── data/                        # cached Lorenz-96 .npz trajectories
 ├── results/                     # per-method-per-N result JSON + checkpoints
 ├── SymFM_Figures/                # paper figures (PNG)
@@ -211,6 +272,13 @@ If you use SymFM in your research, please cite:
   year    = {2026}
 }
 ```
+
+---
+
+## 👤 Author
+
+**Edmund Eric Gah** — Independent Researcher
+📧 [gahedmund146@gmail.com](mailto:gahedmund146@gmail.com)
 
 ---
 

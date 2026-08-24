@@ -1,0 +1,15 @@
+{
+  "physics_weights": [1.0, 2.0, 4.0],
+  "sparsity_weights": [0.1, 0.5, 1.0],
+  "grid": [
+    [0.9978, 1.0038, 0.9929],
+    [0.9766, 0.9934, 0.9685],
+    [0.9710, 0.9562, 0.9791]
+  ],
+  "best_physics": 4.0,
+  "best_sparsity": 0.5,
+  "best_l2": 0.9562,
+  "N": 20,
+  "metric": "Relative L2 Error",
+  "_source": "Transcribed from notebooks/SymFM_Sensitivity_Colab_1.ipynb's own save cell output (the notebook says it saves this file, but never actually pushed it to the repo -- confirmed 404 before this fix). Verified identical across two independent runs of the notebook (GitHub-hosted and a local re-run sent directly) and matches paper Table 5 exactly."
+}

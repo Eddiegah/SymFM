@@ -1,0 +1,6 @@
+{
+  "P10":  { "N": 50,  "P": 10,  "d": 4,  "ERR_mean": 0.0, "L2_mean": 10.0 },
+  "P50":  { "N": 250, "P": 50,  "d": 10, "ERR_mean": 0.0, "L2_mean": 10.0 },
+  "P100": { "N": 500, "P": 100, "d": 16, "ERR_mean": 0.0, "L2_mean": 10.0 },
+  "_source": "Transcribed from notebooks/SymFM_NS_SEIRD_Colab.ipynb. L2_mean=10.0 is the code's saturation/failure sentinel (see eval_model()'s `min(l2, 10.0)`), not a measured error -- it means symbolic equation recovery did not converge at any tested N. Confirmed independently in two separate runs of this notebook (the GitHub-hosted version and a local re-run), both giving ERR=0.0% and L2=10.0 at N=50, 250, and 500. This is why the paper's Table 3 SEIRD column reports 0% equation-recovery rather than an L2 error, and why Section 6 (Discussion/Limitations) states symbolic recovery on SEIRD was not achieved at any tested dimension -- state estimation (see pinnobs_results.json) succeeded independently of this."
+}

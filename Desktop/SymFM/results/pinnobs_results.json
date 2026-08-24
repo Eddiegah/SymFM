@@ -1,0 +1,6 @@
+{
+  "P10": { "N": 50,  "P": 10,  "obs_rmse": 0.003268, "unobs_rmse": 0.006684 },
+  "P50": { "N": 250, "P": 50,  "obs_rmse": 0.003191, "unobs_rmse": 0.004360 },
+  "P100": { "N": 500, "P": 100, "obs_rmse": 0.002701, "unobs_rmse": 0.003529 },
+  "_source": "Transcribed from the 'FINAL COMPLETE RESULTS' cell in notebooks/SymFM_NS_SEIRD_Colab.ipynb as hosted on GitHub (verified 2026-08-24). Matches paper Table 6 exactly. Note: a separate local re-run of the same notebook produced slightly different values (e.g. N=500 unobs_rmse=0.003579), confirming this is a single-seed result with real run-to-run variance -- report multiple seeds with a std in a future revision."
+}

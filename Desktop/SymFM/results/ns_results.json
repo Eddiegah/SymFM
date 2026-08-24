@@ -1,0 +1,11 @@
+{
+  "SymFM": {
+    "ERR_mean": 100.0,
+    "L2_mean": 0.1104
+  },
+  "SINDy": {
+    "ERR_mean": 0.0,
+    "L2_mean": 0.0450
+  },
+  "_source": "Transcribed from the 'FINAL COMPLETE RESULTS: SymFM Paper Table 4' cell output in notebooks/SymFM_NS_SEIRD_Colab.ipynb as hosted on GitHub (verified 2026-08-24). This is the run the published paper's Table 3 NS-32 row reports. A separately re-run copy of the same notebook (not pushed) produced SymFM L2=0.1227 instead of 0.1104 -- training is not seeded (no torch.manual_seed), so re-running this notebook will not reproduce this exact value; treat run-to-run variance of roughly +/-10% as expected until multiple seeds are averaged and reported with a std."
+}

@@ -1,0 +1,8 @@
+{
+  "method": "SymFM",
+  "N": 10,
+  "ERR_mean": 0.0,
+  "L2_mean": 0.8957,
+  "_source": "Transcribed from the 'FINAL COMPLETE RESULTS: SymFM Paper Table 4' cell in notebooks/SymFM_NS_SEIRD_Colab.ipynb (GitHub). Matches the published paper's Table 3 exactly. The existing results/symfm_N10.json in this repo (L2_mean=0.7578) is from a different, earlier/stale run.",
+  "_missing_fields": "n_trials, L2_std, complexity_mean, runtime_mean_s, and per_trial were not printed by the source cell and are not available."
+}

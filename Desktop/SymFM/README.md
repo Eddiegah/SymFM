@@ -11,7 +11,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C.svg?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg?style=for-the-badge&logo=readthedocs&logoColor=white)](./SymFM_Paper_Final.pdf)
 [![Status](https://img.shields.io/badge/status-research%20preview-orange.svg?style=for-the-badge)]()
 
 <br>
@@ -92,11 +91,11 @@ flowchart LR
 | Benchmark | Dimension | SymFM Result | Comparison |
 |---|:---:|:---:|---|
 | 🌊 2D Navier–Stokes | N = 1,024 | ℓ₂ = 0.110 | **Only method** to recover governing structure at this scale |
-| 🦠 Spatially heterogeneous SEIRD | N = 500 | RMSE = 0.00353 | First systematic PINN-Obs eval beyond N = 10 |
+| 🦠 Spatially heterogeneous SEIRD (state estimation) | N = 500 | RMSE = 0.00353 | First systematic PINN-Obs eval beyond N = 10 |
 
 </div>
 
-> ⚠️ **Honest note:** figures and a few result tables in the current paper draft are still placeholders and need a final formatting/verification pass before wider circulation — see the [paper](./SymFM_Paper_Final.pdf) for full methodology and caveats.
+> ⚠️ **Status note (updated):** the paper's Lorenz-96 and Navier-Stokes results (above) have been cross-checked against this repo's actual notebook output and are verified accurate. Two things are **not** yet resolved: (1) end-to-end symbolic equation recovery on the SEIRD benchmark did not succeed at any tested dimension (0% recovery rate; state estimation above succeeds independently of this) — see `results/seird_symfm_results.json`. (2) The paper's component-wise ablation study (removing the foundation model / active subspace / PINN-Obs / physics loss one at a time) has no corresponding notebook, script, or logged result in this repo and is marked as future work in the current draft — if you have that run saved elsewhere, add it back under `notebooks/` and `results/`.
 
 ---
 
@@ -130,13 +129,24 @@ Epidemiological model with patch-to-patch coupling.
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Reproducing the results
 
-```bash
-git clone https://github.com/Eddiegah/SymFM.git
-cd SymFM
-pip install -r requirements.txt
-```
+This repo is a collection of Colab notebooks and their supporting scripts,
+not an installable Python package — there is no `pip install` step and no
+`from symfm import SymFM` API. To reproduce a result, open the relevant
+notebook in Colab and run it top to bottom on a GPU runtime:
+
+| Notebook | Produces |
+|---|---|
+| `notebooks/SymFM_Colab.ipynb` | Lorenz-96 main results (Table 3 rows, N=4/10/20/40) |
+| `notebooks/SymFM_NS_SEIRD_Colab.ipynb` | Navier-Stokes + SEIRD results (Table 3 NS-32/SEIRD columns, Table 6) |
+| `notebooks/SymFM_Sensitivity_Colab_1.ipynb` | Hyperparameter sensitivity grid (Table 5) |
+
+Standalone components used by these notebooks also exist as plain scripts
+under `src/` (`symfm_model.py`, `active_subspace.py`, `kan_baseline.py`,
+`sindy_baseline.py`, `lorenz96.py`, `phase1_summary.py`,
+`scalability_figure.py`), useful for reading the implementation without
+launching a notebook.
 
 <details>
 <summary><b>📦 Core dependencies</b></summary>
@@ -156,46 +166,34 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Quick start
-
-```python
-from symfm import SymFM
-
-# Initialize with full state dimension and target active subspace dimension
-model = SymFM(state_dim=40, active_subspace_dim=8)
-
-# Pretrain the physics-informed foundation model encoder
-model.pretrain(corpus="synthetic_dynamics_50k")
-
-# Fine-tune end-to-end on partial, noisy observations
-model.fit(observations=y, obs_matrix=H)
-
-# Extract the closed-form governing equation
-equation = model.extract_symbolic()
-print(equation)
-```
-
----
-
 ## 📁 Repository structure
 
 ```
 SymFM/
-├── symfm/
-│   ├── modules/
-│   │   ├── pinn_obs.py          # Module 1 — state estimation
-│   │   ├── fm_encoder.py        # Module 2 — foundation model encoder
-│   │   ├── active_subspace.py   # Module 3 — dimensionality reduction
-│   │   └── kan_head.py          # Module 4 — symbolic regression
-│   └── symfm.py                 # end-to-end pipeline
-├── benchmarks/
-│   ├── lorenz96/
-│   ├── navier_stokes/
-│   └── seird/
-├── results/
+├── src/
+│   ├── symfm_model.py           # end-to-end SymFM model
+│   ├── active_subspace.py       # Module 3 -- dimensionality reduction
+│   ├── kan_baseline.py          # flat KAN baseline (B2)
+│   ├── sindy_baseline.py        # SINDy baseline
+│   ├── lorenz96.py              # Lorenz-96 data generation
+│   ├── phase1_summary.py        # early baseline comparison script
+│   └── scalability_figure.py    # Figure 3 generation
+├── notebooks/
+│   ├── SymFM_Colab.ipynb              # Lorenz-96 (Table 3)
+│   ├── SymFM_NS_SEIRD_Colab.ipynb     # Navier-Stokes + SEIRD (Table 3, 6)
+│   └── SymFM_Sensitivity_Colab_1.ipynb # Hyperparameter grid (Table 5)
+├── data/                        # cached Lorenz-96 .npz trajectories
+├── results/                     # per-method-per-N result JSON + checkpoints
+├── SymFM_Figures/                # paper figures (PNG)
 ├── SymFM_Paper_Final.pdf
 └── README.md
 ```
+
+Note: as currently pushed, all of the above lives one directory deeper
+than the repo root, under `Desktop/SymFM/` (an artifact of how the repo
+was first committed). `git clone` therefore gives you
+`SymFM/Desktop/SymFM/...`, not a clean root. Worth moving everything up a
+level so `git clone` produces the layout above directly.
 
 ---
 
@@ -205,10 +203,10 @@ If you use SymFM in your research, please cite:
 
 ```bibtex
 @article{gah2026symfm,
-  title   = {Toward Autonomous Scientific Discovery: A Physics-Informed
-             Foundation Model with Dimensionality-Aware Symbolic Regression
-             for Governing Equation Discovery in High-Dimensional
-             Nonlinear Dynamical Systems},
+  title   = {SymFM: A Physics-Informed Foundation Model with
+             Dimensionality-Aware Symbolic Regression for Governing
+             Equation Discovery in High-Dimensional Nonlinear
+             Dynamical Systems},
   author  = {Gah, Edmund Eric},
   year    = {2026}
 }

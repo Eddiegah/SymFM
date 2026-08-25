@@ -1,10 +1,5 @@
-# Deny everything by default, only allow the SymFM project through.
-# This repo's root ended up being the home directory instead of a
-# dedicated project folder - this file is a guardrail so a future
-# `git add -A`/`git add .` from ~ can't accidentally stage or push
-# unrelated home-directory contents (SSH keys, credentials, etc.) to
-# this repo's public GitHub remote.
-/*
-!/Desktop/
-/Desktop/*
-!/Desktop/SymFM/
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.DS_Store

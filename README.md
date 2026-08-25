@@ -250,12 +250,6 @@ SymFM/
 └── README.md
 ```
 
-Note: as currently pushed, all of the above lives one directory deeper
-than the repo root, under `Desktop/SymFM/` (an artifact of how the repo
-was first committed). `git clone` therefore gives you
-`SymFM/Desktop/SymFM/...`, not a clean root. Worth moving everything up a
-level so `git clone` produces the layout above directly.
-
 ---
 
 ## 📖 Citation

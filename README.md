@@ -312,8 +312,8 @@ If you use SymFM in your research, please cite:
 
 ## 👤 Author
 
-**Edmund Eric Gah** — Independent Researcher
-📧 [gahedmund146@gmail.com](mailto:gahedmund146@gmail.com)
+**Edmund Eric Gah** — ExeaLabs
+📧 [edmund.gah@exealabs.org](mailto:edmund.gah@exealabs.org)
 
 ---
 
